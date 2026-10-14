@@ -1,4 +1,4 @@
-# Codex-Skill
+# Codex Skills
 
 个人维护的 Codex 技能集合，侧重 Dota 2 开发、游戏数值工作簿、图表和界面取证。
 
