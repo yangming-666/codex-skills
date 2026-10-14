@@ -1,6 +1,7 @@
 # Delivery Quality Gates
 
-All applicable gates must pass.
+All applicable gates must pass. Review them in the existing task record; they do not require one
+new test, report or tool run per bullet. Reuse the execution surface's applicable evidence.
 
 ## Source gate
 
@@ -49,7 +50,8 @@ All applicable gates must pass.
 
 ## Structure gate
 
-- at least two candidate layouts were evaluated;
+- an open structure decision compares at least two candidates; a prescribed structure is validated
+  against mandatory operations without inventing alternatives;
 - chosen layout supports every mandatory user operation;
 - canonical and presentation views reconcile to the same key/value set;
 - dimension cardinalities, expected key combinations, data-cell count, and final row/column count reconcile arithmetically;
@@ -72,7 +74,8 @@ All applicable gates must pass.
 
 ## Visual gate
 
-- every user-facing sheet was rendered and inspected;
+- every new or affected user-facing sheet/range was rendered and inspected; unchanged views may
+  reuse valid evidence unless shared structure/style/formula dependencies changed;
 - grouped dimensions have obvious hierarchy;
 - comparison groups use consistent, distinguishable styling;
 - merged cells, when used, are limited to presentation headers;
@@ -85,7 +88,8 @@ All applicable gates must pass.
 - formula error scan is clean;
 - exported workbook re-imports;
 - OpenXML parses and every sheet relationship is valid;
-- no Excel repair log is produced;
+- any observed Excel repair report is a file failure; do not require launching Excel solely to
+  produce a repair-log observation when the authorized file checks already establish integrity;
 - final artifact is the requested workbook, not an intermediate variant.
 
 ## Failure rule

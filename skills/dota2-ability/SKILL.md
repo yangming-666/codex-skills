@@ -1,97 +1,75 @@
 ---
 name: dota2-ability
-description: Author or rewrite Dota 2 abilities and modifiers with Lua + KV, including vanilla replication, targeting, projectiles, buffs, debuffs, damage, and ability-owned presentation. Use current vanilla KV and `server.dll` resource evidence before implementation; delegate particle and sound playback contracts to their dedicated skills. Do not use for generic game-mode, test-mode, shop, backend, or UI logic.
+description: Author, materially rewrite, or diagnose the gameplay contract of a Dota 2 ability/modifier in Lua or KV, including vanilla replication, targeting, projectiles, buffs, debuffs, and damage. Use when the ability/modifier itself is the primary changed or audited artifact. Do not trigger for generic game-mode/test/shop/backend/UI logic, ability-name lookup, localization, config-only registration, or particle/sound-only work; add particle or sound Skills only when their playback contracts are independently in scope.
 ---
 
 # Dota 2 Ability
 
-## Scope
+Own the requested ability/modifier Lua/KV gameplay contract. Follow current project integration,
+config, precache and validation rules; do not load this Skill for generic systems or name lookup.
 
-Use this skill only when the primary object is an ability, modifier, or ability KV contract. Do not use it for generic Lua systems, test commands, Panorama, match flow, shops, accounts, services, or unrelated orchestration.
+## Evidence and routes
 
-## Evidence Order
+Current project Lua/KV proves addon behavior; current vanilla KV proves native data/cast fields;
+`server.dll` proves native resource association; VPCF/soundevent plus actual callers prove playback;
+authorized runtime comparison proves residual timing/visual facts. Older/public replicas and
+`tools/Dota2 ability` are fallback hypotheses, never overrides for current authoritative evidence.
+Read only the needed route:
 
-Use the newest local game build and project sources. Treat evidence according to what it can prove:
+- KV authoring: [ability-kv-format.md](references/ability-kv-format.md).
+- Lua hooks/patterns: matching section of [lua-ability-patterns.md](references/lua-ability-patterns.md).
+- Unresolved engine modifier name: [built-in-modifier-names.md](references/built-in-modifier-names.md).
+- Awakening: [awaken-ability-architecture.md](references/awaken-ability-architecture.md), then only the
+  matching example in [awaken-ability-examples.md](references/awaken-ability-examples.md).
+- New ability scaffolding: `assets/ability-template/`; do not load templates for an existing fix.
 
-1. Project Lua/KV: current addon behavior and integration constraints.
-2. Current vanilla KV: ability data, targeting, cast fields, specials, and hero registration.
-3. Current `server.dll`: native ability-to-resource association.
-4. Current VPCF/soundevent files: resource playback contracts.
-5. Runtime comparison: final timing and visual validation.
-6. `tools/Dota2 ability` or public Lua replicas: fallback hypotheses only.
+## Scope work before extraction
 
-Never let an older or third-party Lua recreation override current KV, DLL, VPCF, or observed runtime evidence.
+1. Inspect the owning ability/KV and classify data-only, behavior, presentation or full replication.
+   Read current vanilla hero/ability fields only when that native relationship is in scope.
+   Complete ability/ultimate creation includes applicable sound phases unless the user scopes them
+   out; omitted audio wording is not a silent-design requirement. Inspect the actual cast, travel,
+   impact and termination paths, including reused helpers and early returns. A narrow gameplay fix
+   only rechecks sound relationships it affects.
+2. Resolve only required sources through the project's path resolver when supplied. Do not repeat
+   environment/Steam probing that the project already owns. Without one, use explicit
+   `DOTA2_VANILLA_KV_ROOT`, `DOTA2_CONTENT_ROOT` / `DOTA2_VANILLA_CONTENT_ROOT`, and
+   `DOTA2_SERVER_DLL` or the bundled source resolver. Fail with the missing source; no hardcoded drive.
+3. Unknown native presentation association uses the bundled
+   `scripts/inspect-server-ability-resources.ps1 -Query <raw_ability_or_exact_native_class>`.
+   Select its highest-confidence matching resource block. Skip DLL extraction for established
+   unchanged resources; never scan a whole hero directory when the native association is known.
+4. DLL string order does not prove attach/CP/projectile API/lifetime. Add `dota2-particle-playback`
+   only for changed/unproved playback, and `dota2-sound-lookup` only for changed/unproved sound.
+   Reuse verified contracts without loading both specialists.
+   For new or missing sound phases, follow the project's audio integration rules and add the sound
+   specialist; verify event ownership, resources, spatial source/range, stop lifecycle and precache.
+5. Edit the smallest owning contract: tunables in committed config, behavior/sequencing in Lua.
+   Integrate new assets through the repository's narrowest sanctioned preload owner. Resolve
+   remaining uncertainty with the smallest applicable authorized evidence, not broad candidate sweeps.
 
-## Resolve Sources
+## Implementation invariants
 
-Resolve paths without hardcoding a drive:
+- Guard server-owned logic with `IsServer`; forward-declare early-called locals.
+- Use established `Timers:CreateTimer` sequencing and entity/ability state instead of unowned globals.
+- Reuse targeting, battlefield bounds, projectiles, damage and ConfigRuntime helpers required by the
+  project. Random projectile directions use analytically legal battlefield intervals, not rejection
+  sampling or obstacle AABBs substituted for the playable frame.
+- Do not cast a vanilla ability merely for visuals unless engine cast/gameplay side effects are
+  explicitly requested. Built-in modifier names remain engine-owned.
+- Precache the called root resource; add children only when project/runtime evidence requires it.
+  Prefer owning ability/unit or sanctioned maintenance path, not an unrelated global list. If a
+  maintenance command would rewrite unrelated work, make the narrow source edit and report it deferred.
 
-- Vanilla KV: `DOTA2_VANILLA_KV_ROOT`, then repo-relative `Dota2 原版游戏配置`.
-- Dota content root: `DOTA2_CONTENT_ROOT` or `DOTA2_VANILLA_CONTENT_ROOT`, then detect `Steam\steamapps\common\dota 2 beta\content\dota` or its `SteamLibrary` variant.
-- Native server binary: `DOTA2_SERVER_DLL`, or derive `game\dota\bin\win64\server.dll` from the content root, then detect Steam installs.
-- Optional reference library: repo-relative `tools/Dota2 ability`.
+## Replication and acceptance
 
-Fail fast when a required source cannot be resolved. State which resolved sources are being used.
-
-## Workflow
-
-1. Inspect the owning project ability/KV and classify the requested change as data-only, behavior, presentation, or full replication.
-2. For a vanilla rewrite, read the current vanilla hero/ability KV and record only the fields the implementation consumes.
-3. For native presentation resources, run:
-
-   ```powershell
-   & "<dota2-ability-skill>\scripts\inspect-server-ability-resources.ps1" `
-     -Query "dark_willow_bedlam"
-   ```
-
-   The script accepts a raw KV ability name or exact `CDOTA_Ability_*` class and selects the highest-confidence native resource block. Use that block to identify candidate particles, models, and sound events. Do not guess from filenames or recursively scan an entire hero particle directory when the DLL identifies the resource set.
-4. Do not infer attach type, control-point values, projectile API, or lifetime from DLL string order. Use `$dota2-particle-playback` for VPCF playback and `$dota2-sound-lookup` for sound events.
-5. Implement the smallest owning KV/Lua change. Keep tunable numbers in KV and sequencing/behavior in Lua.
-6. Integrate every new runtime asset through the repository-sanctioned, narrowest precache path.
-7. Validate only unresolved behavior. Do not build broad candidate matrices when current native calls and resource contracts already establish the answer.
-
-## Implementation Rules
-
-- Guard server logic with `if not IsServer() then return end`.
-- Forward-declare local helpers called before their definitions.
-- Use `Timers:CreateTimer` for ability-owned sequences; avoid global state.
-- Reuse project targeting, battlefield-boundary, projectile, damage, and configuration helpers instead of duplicating them.
-- For random projectile directions, analytically sample the legal intervals produced by the project battlefield boundary. Do not use rejection sampling or substitute obstacle AABBs for the playable frame.
-- Use `ConfigRuntime` for gameplay KV when required by the repository.
-- Do not call a vanilla ability merely to borrow its presentation unless the task explicitly wants the engine-side cast and its gameplay side effects.
-- Treat built-in modifier names as engine-provided; do not redefine them.
-
-## Vanilla Replication
-
-Replicate only the layers the task requires:
-
-- Cast: behavior, target contract, cast point, gesture, sound, and cast particle.
-- Travel: projectile type, movement owner, speed, radius, and visual lifetime.
-- Impact: damage/control rules, area, impact presentation, and cleanup.
-- State: modifiers, dispels, immunity, interruption, death, and refresh behavior.
-
-For a full-parity claim, verify gameplay timing and visible behavior at runtime. Report:
-
-- Vanilla KV fields consumed.
-- DLL resources selected and their target native ability class.
-- Particle/sound contracts verified by the dedicated skills.
-- Runtime precache coverage.
-- Intentional deviations and unverified edge cases.
-
-## Resource Rules
-
-- A DLL resource string proves native association, not correct custom playback.
-- Precache the root resource called by Lua; allow normal child dependency loading unless project evidence requires explicit children.
-- Prefer the owning ability/unit precache block or project maintenance tool.
-- Do not place ability-specific assets in a global static list without repository policy.
-- If a maintenance command rewrites unrelated user work, make the narrow source edit and report the deferred command.
-
-## References
-
-Load only references needed for the current task:
-
-- `references/ability-kv-format.md`: KV authoring.
-- `references/lua-ability-patterns.md`: Lua hooks and patterns.
-- `references/built-in-modifier-names.md`: engine modifier names.
-- `references/awaken-ability-architecture.md` and `references/awaken-ability-examples.md`: awakening work.
-- `assets/ability-template/`: new ability templates.
+Only requested layers apply: cast targeting/point/gesture/presentation; travel movement/speed/radius/
+lifetime; impact damage/control/area/cleanup; state immunity/dispels/interruption/death/refresh.
+A full-parity claim needs authorized runtime timing and visible behavior evidence; source-only work
+must name that limit. Report consumed KV, selected native class/resources, established playback,
+precache and deviations/gaps once in the existing task record. No particle, DLL or runtime matrix is
+needed for a local behavior fix whose relevant evidence is already established.
+For complete ability creation, every applicable sound phase needs a verified playback owner or an
+evidenced intentional absence. Particle completion and a sound-bearing helper do not prove the
+actual ability path plays audio. Unresolved sound contracts prevent a complete-delivery claim;
+report engine-only listening gaps separately without assuming permission to launch the game.

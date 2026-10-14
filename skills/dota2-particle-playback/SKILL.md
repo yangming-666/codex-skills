@@ -1,82 +1,76 @@
 ---
 name: dota2-particle-playback
-description: Identify and play Dota 2 particles correctly by using current `server.dll` evidence for vanilla ability resource selection and real `.vpcf` files for attach, control-point, movement, lifetime, child, and precache contracts. Use for particle playback, recreation, modification, or debugging; avoid filename guessing and unnecessary full-family scans.
+description: Identify, implement, recreate, modify, or debug a Dota 2 gameplay particle playback contract using authoritative ability association and real `.vpcf` evidence for attachment, control points, movement, lifetime, children, cleanup, and precache. Use when particle behavior/resource identity is a requested or unresolved artifact. Do not trigger when a verified particle path is merely preserved, displayed as text, copied unchanged, or added to an existing proven preload list, nor for cosmetic VMAP-owned particle composition.
 ---
 
 # Dota 2 Particle Playback
 
-## Evidence Boundary
+Establish the requested root's caller, CP, movement and lifetime contract from current evidence.
+A verified unchanged path or preload entry does not need a new playback investigation.
 
-Use each source only for what it proves:
+## Evidence and lookup
 
-- Current `server.dll`: which resources a native ability references.
-- Current VPCF tree: attach drivers, CP consumers, movement operators, emitters, lifetime, and children.
-- Current Lua/native call evidence: caller-provided attach mode, CP values, API choice, and cleanup.
-- Runtime test: residual ambiguity and visual parity.
+- Current native DLL strings prove ability/resource association, not attach mode or CP values.
+  VPCF operators prove consumers/drivers/lifetime; current Lua/native calls prove caller inputs.
+  Preview drivers do not necessarily describe production callers. Authorized runtime resolves only
+  remaining engine ambiguity or visual parity.
+- Use the project's path resolver; without one use configured Dota roots/known install evidence.
+  Unknown native association uses the existing extractor route in
+  [vpcf-inspection.md](references/vpcf-inspection.md). Known custom/root paths skip DLL extraction.
+  Do not load ability-authoring templates merely for association lookup or scan whole hero folders.
+- Read the exact root and only active children affecting caller CPs, movement, timing or the requested
+  visual/endcap. Do not recursively dump unrelated visual leaves. Reuse already-established evidence.
 
-DLL strings do not prove playback parameters. VPCF preview drivers do not necessarily prove caller inputs.
+## Native replication and restoration
 
-## Workflow
+- Before rewriting a native effect, establish a baseline using the unmodified packaged root,
+  its active child hierarchy and source-supported caller inputs within the native parameter range.
+  Reuse verified baselines; unavailable runtime leaves visual parity unverified.
+- Preserve native movement, model-renderer and snapshot ownership unless evidence identifies an
+  incompatibility. Spawned model entities are not equivalent substitutes for particle models;
+  account for animation, skinning and lifetime before proposing a replacement.
+- For test-only work, isolate callers, resources and reload paths from production. When asked to
+  restore, recover the identified historical caller, affected dependencies and compiled resources;
+  do not reconstruct an approximation or include new fixes.
 
-1. Resolve the current Dota content root from `DOTA2_CONTENT_ROOT` or `DOTA2_VANILLA_CONTENT_ROOT`, then detected Steam installs.
-2. Select the exact root particle:
-   - For a vanilla native ability with an unknown or disputed particle, use the `$dota2-ability` DLL workflow and `scripts\inspect-server-ability-resources.ps1`.
-   - For a known custom/root path, skip DLL extraction.
-   - Do not guess from filenames or scan an entire hero particle directory when DLL/current caller evidence identifies the resource.
-3. Open the exact root VPCF. Follow only child branches that consume caller CPs, own movement/lifetime, or materially contribute the requested visual. Do not recursively dump unrelated visual leaves.
-4. Establish the caller contract:
-   - Prefer a current known-good caller or native-call evidence for attach mode and CP values.
-   - Verify those values against actual VPCF consumers.
-   - Separate caller inputs from internally generated CPs.
-5. For projectile-like effects, classify movement as engine-driven, particle-driven, or caller-driven before choosing `CreateTrackingProjectile`, manual `ParticleManager`, or timer updates.
-6. Check emit duration, particle lifetime, decay, stop operators, endcaps, and cleanup.
-7. Precache the root VPCF through the repository-sanctioned narrowest owner.
-8. Run focused runtime tests only for unresolved parameters. Preserve confirmed-good facts and stop retesting confirmed-bad candidates.
+## Establish the contract
 
-## Analysis Depth
+1. Match actual caller attach mode/CP values against VPCF consumers. Separate caller inputs from
+   internally generated CPs; never infer a CP from index, filename or native string order.
+2. Name one movement owner before choosing APIs: projectile engine, particle operators or Lua caller.
+   Use tracking projectiles only for a proved standard contract, not arbitrary manual CPs.
+3. Verify emit duration, particle lifetime, decay/stop/endcap and every owning cleanup path. For a
+   buff/follow effect include attachment and endcap removal; for a one-shot use its finite lifecycle.
+4. Verify the repository's narrowest root-resource precache owner. Children are not extra entries
+   unless project/runtime evidence requires them.
 
-Use the lightest analysis that establishes correctness:
+Use the lightest sufficient depth: proven one-shot caller → relevant CPs/lifetime only; buff/follow →
+attachment and cleanup; projectile → destination/speed/orientation/cutoff. Packed, conflicting or
+undocumented vectors need component-level consumers and confidence. No full CP table for a simple
+proven call. The inspection reference supplies field details only when needed.
 
-- Simple one-shot with a proven caller: verify the root, relevant CP consumers, lifetime, and precache. No full CP table.
-- Follow/buff particle: verify attachment drivers, caller CPs, endcap behavior, and cleanup.
-- Projectile or moving particle: verify movement owner, destination/speed/orientation CPs, and cutoff.
-- Packed, conflicting, or undocumented CPs: build a per-component consumer table and assign confidence.
+## Playback invariants
 
-Never infer CP meaning from its index or filename.
+- `m_Children` signals a wrapper; inspect relevant active branches. `m_nOverrideCP` is an input
+  reference whose meaning comes from operator and caller, not its name.
+- Set particle-driven destinations once; avoid per-frame Lua motion when particle/projectile owns it.
+- Do not guess HSV/tint CPs or overwrite internal CPs. A proven root/child component conflict may
+  require a minimal wrapper/remap; do not force incompatible meanings into one vector.
+- Suppress/separate endcaps only if they obscure movement diagnosis. Preserve the complete effect's
+  accepted terminal behavior when implementing the final playback contract.
 
-## Playback Rules
+## Bounded validation and handoff
 
-- Treat `m_Children` as a wrapper signal, but inspect only relevant active branches.
-- Treat `m_nOverrideCP` as an input reference whose meaning must be proven by its operator and caller.
-- Set particle-driven destinations once unless the contract explicitly makes Lua the movement owner.
-- Avoid per-frame Lua motion when the VPCF or projectile engine owns movement.
-- Do not use `CreateTrackingProjectile` for a nonstandard manual CP contract.
-- Do not guess HSV/tint CPs or overwrite internally derived CPs.
-- If root and child consume the same CP component incompatibly, use a minimal wrapper/remap instead of forcing one value to satisfy both.
-- Suppress or separate endcaps only when they obscure movement diagnosis.
-- Precache the caller's root VPCF; do not list every child unless project/runtime evidence requires it.
+Use a focused authorized test only for a remaining hypothesis: short/long distance, once/updated
+CP when ownership is unclear, source-supported packed values, or lifetime/speed cutoff. Stop broad
+sweeps when caller and VPCF agree; do not retry rejected candidates without new evidence. A runtime
+need does not authorize launching, controlling or capturing a game/remote session.
 
-## Validation
+Build success is not visual acceptance. Observe movement and termination across frames when those
+contracts are affected. Attribute a cause only to an isolated change or independent evidence;
+success after several simultaneous changes proves the combination, not a unique root cause.
+Native-range success does not establish parity for extended parameters or concurrent instances.
 
-For ambiguous moving effects, test the smallest matrix that distinguishes the remaining hypotheses:
-
-- short and long distance;
-- destination set once versus caller-updated, only if ownership is unclear;
-- candidate packed-CP values supported by actual consumers;
-- lifetime-derived speed/duration when a cutoff exists.
-
-Do not run a broad parameter sweep after native-call and VPCF evidence already agree.
-
-## Report
-
-Report only consumed evidence:
-
-- exact root VPCF and relevant children;
-- why the particle belongs to the target ability;
-- attach mode and caller CPs;
-- movement owner and update policy;
-- lifetime/cleanup;
-- precache entry;
-- remaining uncertainty and focused test, if any.
-
-See `references/vpcf-inspection.md` for field-level inspection and portable root resolution.
+Record once in the existing task evidence: root/relevant children, ability association, attach/caller
+CPs, movement/update owner, lifetime/cleanup, precache and unresolved facts. No second CP/report
+ledger is required for already-proved facts.

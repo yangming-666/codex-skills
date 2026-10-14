@@ -1,5 +1,7 @@
 # Panorama layout contracts
 
+For any local geometry correction, complete `layout-proof.md` first. These patterns describe structures; they do not replace parent-chain proof.
+
 ## Rounded surfaces
 
 Give each rounded card one visual owner. That panel owns radius, clipping, background, border, and shadow when they form one shell. Put internal tint/highlight layers inside the clipped owner and avoid stacking same-radius opaque panels that create seams.
@@ -52,6 +54,7 @@ For centered text, give the wrapper stable height and the label full width, `hei
 
 ## Alignment contract
 
+- Centering is relative to the actual parent content box. If two elements must share an edge or center but use different parents, derive both ancestor chains or introduce a common rail.
 - Put horizontal centering on the shared parent or the centered group.
 - Give icons and text stable wrappers and `vertical-align: center`; do not align them with unrelated `margin-top` values.
 - When a centered control has a side action, use equal side slots or overlay the side action outside flow so it cannot shift the center.

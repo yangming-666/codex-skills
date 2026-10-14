@@ -1,17 +1,19 @@
 # VPCF Inspection
 
-Use this reference after the root particle has been selected.
+Use source-resolution guidance when the root is unknown; otherwise read only the needed field-level sections.
 
 ## Resolve Current Files
 
-Resolve the content root in this order:
+Use the host project's path resolver first. Without one, use the explicitly configured
+`DOTA2_CONTENT_ROOT` / `DOTA2_VANILLA_CONTENT_ROOT` or known install evidence; do not repeat a
+project-owned Steam search. Fail if the required current VPCF is unavailable.
 
-1. `DOTA2_CONTENT_ROOT`
-2. `DOTA2_VANILLA_CONTENT_ROOT`
-3. Detected `Steam\steamapps\common\dota 2 beta\content\dota`
-4. Detected `SteamLibrary\steamapps\common\dota 2 beta\content\dota`
-
-Fail fast if the exact VPCF cannot be opened. For native abilities with an unknown path, use the `dota2-ability` server-DLL extractor before searching particle directories.
+For an unknown native association, resolve the installed `dota2-ability` location from the available
+Skill metadata (respect project registration precedence). Its existing
+`scripts/inspect-server-ability-resources.ps1` accepts `-Query <raw_ability_or_native_class>` and
+`-DllPath <resolved_server_dll>`. This helper provides association evidence only; invoking the known
+lookup does not require reading ability-authoring templates or widening the gameplay task. If its
+locator/helper is unavailable, report the missing lookup capability instead of guessing a directory.
 
 ## Parse the Contract
 

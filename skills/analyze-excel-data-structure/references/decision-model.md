@@ -4,7 +4,8 @@ Use this model after building the semantic and numerical model.
 
 ## Candidate structures
 
-Always consider at least two:
+For an open structure decision, consider at least two. If the user prescribes the structure, validate
+that shape against the vetoes; do not generate unrequested alternatives. Candidate families:
 
 - normalized: dimensions as key columns, measures as value columns;
 - cross-tab: one dimension on rows, one grouped across columns, measures nested under groups;
@@ -25,7 +26,8 @@ Examples:
 
 ## Score surviving candidates
 
-Score 0–3 and record the reason:
+When multiple candidates survive and a material tradeoff remains, score 0–3 and record the reason.
+If vetoes already select the shape, one concise decision is sufficient; no numerical scorecard:
 
 | Criterion | 0 | 3 |
 |---|---|---|

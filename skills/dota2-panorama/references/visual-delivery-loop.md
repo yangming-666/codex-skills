@@ -1,6 +1,6 @@
 # Panorama visual delivery loop
 
-Use this reference for any screenshot-, design-, or reference-driven Panorama UI.
+Use this reference for component/page design, replication, evidence ownership, and multi-state visual delivery. For a local geometry correction, use `layout-proof.md`; load this file only when evidence, design hierarchy, or state coverage is also in scope.
 
 ## 1. Choose process depth
 
@@ -23,12 +23,21 @@ Write one brief before editing:
 Rules:
 
 - A design can be partial. It owns only what it actually draws.
+- A design owns visible table columns, shared edges, cell substitutions, centered groups, and spacing even when it does not annotate pixel values.
 - A designated complete reference fills missing content and layout, not visual style unless requested.
 - A Dota prototype fills only visual decisions still unspecified.
 - The current implementation is wiring evidence, never design evidence.
 - Give each independently visible surface or behavior its own row when it has a different evidence owner.
 
 If the user's explanation changes an evidence role, update the brief before touching code. Do not continue from the earlier interpretation.
+
+For alignment-sensitive regions, add:
+
+| Region | Reference model | Shared axes/cells | Center subject | Counterexample states |
+| --- | --- | --- | --- | --- |
+| attribute list | fixed grid / centered groups | label, value, lock, trend | grid or complete row group | short/long, lock/trend, rerender |
+
+Do not use “centered” without naming the center subject.
 
 ## 3. State and interaction matrix
 
@@ -53,33 +62,39 @@ For each state record:
 
 Switching state must update every coupled value. A selection that changes its heading but leaves dependent description, controls, or values stale is incomplete.
 
+For persistent navigation shells, distinguish session capability from mode-local data:
+
+- Navigation visibility and shell geometry must be owned by a value that remains valid for the whole popup/session.
+- A mode switch must not clear the only value used to prove that its own navigation remains available.
+- Temporary targets may be ignored by another mode, but keep them until an explicit invalidation boundary such as popup close, source deletion, or user selection of a different target.
+- For entry points that carry a non-default target, statically trace the full round trip: entry mode → sibling mode → original mode. At every step prove navigation visibility, selected state, target identity, content owner, enabled state, and hit testing.
+- Reject a change when switching modes can make the control that performs the reverse transition disappear.
+
 ## 4. Source preflight
 
 Before visual editing:
 
 1. Read the affected XML subtree, every CSS definition for critical or changed selectors, the owning JS render/update functions, includes, and localization/data sources.
-2. Build a selector ownership list. Mark the final rule in cascade order for every critical selector.
-3. Verify required shared styles such as `dotastyles.vcss_c` before judging fonts or shared controls.
-4. Verify every referenced asset exists. Do not guess filenames or generate a substitute when an exact supplied or Dota asset is required.
-5. Verify localization tokens exist before calling `$.Localize`. Never construct speculative token names.
-6. Separate invalid property planes: XML/JS properties such as `hittest` do not belong in VCSS.
+2. Inventory dynamic panels: constructor parent, existing-node parent, deletion/rerender owner, and states where an old tree can remain alive.
+3. Build a selector ownership list. Mark the final rule in cascade order for every critical selector.
+4. Verify required shared styles such as `dotastyles.vcss_c` before judging fonts or shared controls.
+   - A CustomLayout tooltip, popup, or dynamically loaded XML has its own style load scope; it does not inherit the caller page's `<styles>` includes.
+   - Before setting `font-family: defaultFont` or using shared Dota selectors, verify that resource's own XML includes `s2r://panorama/styles/dotastyles.vcss_c`.
+   - Load shared styles before the resource's addon CSS so local selectors retain final cascade ownership.
+   - If the include is missing, add it before changing the dependent font or control styling.
+5. Verify every referenced asset exists. Do not guess filenames or generate a substitute when an exact supplied or Dota asset is required.
+6. Verify localization tokens exist before calling `$.Localize`. Never construct speculative token names.
+7. Separate invalid property planes: XML/JS properties such as `hittest` do not belong in VCSS.
 
-Do not blame compilation, caching, or stale runtime state without a concrete console/load error. In auto-compiling Panorama workflows, a bad result is implementation evidence until logs prove otherwise.
+Do not blame compilation, caching, or stale runtime state without a concrete load/compile error in the current authorized VConsole2 batch. In auto-compiling workflows, the displayed result remains implementation evidence until that batch proves otherwise.
 
 ## 5. Relationship-first layout
 
-Implement relationships through parents:
+Complete the parent-chain and geometry process in `layout-proof.md` for every constrained region. Page work repeats the proof per major region and then checks the regions against the page shell.
 
-- centered group: parent owns width; group uses `horizontal-align: center`;
-- vertically centered row: stable row height; every icon and text wrapper uses `vertical-align: center`;
-- centered control with an asymmetric side action: use equal left/right side slots or overlay the side action outside flow;
-- action centered in remaining space: make the remaining-space wrapper the layout owner, then center the action inside it;
-- left object plus right stacked content: horizontal parent with separate left and right owners; the right owner flows down;
-- label and icon: give both stable wrappers and center them; do not compensate with unrelated top margins.
+Implement centers, equal gaps, shared edges, remaining-space placement, and fixed stacks through their nearest shared parent. Do not simulate a parent relationship with unrelated offsets. Apply an optical correction only after authored geometry is proved, document it, and keep it local.
 
-Use pixels for authored sizes, gaps, and outer bounds when evidence provides them. Do not use independent `position`, negative margins, or one-off offsets to simulate centering or alignment. Coordinates verify relationships; they do not replace them.
-
-Apply an optical correction only after structural centering is correct, document the correction, and keep it local.
+For design-owned tables, preserve shared label/value axes and place locks/trends in their specified cells. Do not replace the table with independently centered rows. For design-owned centered groups, center the complete authored group and reject asymmetric empty columns.
 
 ## 6. Exact-reference implementation
 
@@ -120,9 +135,11 @@ Check the applicable delta, component state contract, or page state matrix, not 
 - state changes update coupled content;
 - referenced controls and secondary surfaces match their own contracts;
 - repeated interaction does not flash or move unrelated content;
-- console warnings introduced by the UI are resolved.
+- warnings introduced by the UI in the current VConsole2 batch are resolved.
 
-When runtime behavior or panel structure is uncertain, perform one early smoke check before detailed styling. After structure is confirmed, batch source-complete changes and request one final screenshot set covering the affected states. Avoid repeated one-property Computer Use round-trips unless diagnosing a runtime-only defect.
+Run the counterexample states from `design-alignment-proof.md`. `git diff --check`, successful compilation, selector searches, and wrapper arithmetic are hygiene checks, not design-conformance proof.
+
+When runtime behavior or panel structure is uncertain, perform one early smoke check only after the static reject gate in `layout-proof.md` passes. After structure is confirmed, batch source-complete changes and request one final screenshot set covering the affected states. Avoid repeated one-property runtime round-trips unless diagnosing a runtime-only defect.
 
 ## 10. Feedback convergence
 
@@ -138,3 +155,5 @@ Rules:
 - Recheck previously accepted requirements after every cascade or panel-tree change.
 - Report `source-checked` separately from `runtime-verified`.
 - Do not claim completion while any reported issue remains unaccounted for.
+- A screenshot that disproves a source-pass claim means the source gate missed an invariant. Add that invariant before another page edit.
+- After two failures of the same relation, stop implementation and audit the workflow instead of trying another offset or alignment model.

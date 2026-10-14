@@ -339,3 +339,20 @@ Implementation contract:
 - Use `ItemRarityColor` on rarity text.
 - Keep primary page surfaces charcoal. Rarity color identifies content and must not flood the entire shell.
 - Use one naming set consistently in data, CSS classes, localization, and probability configuration.
+
+### Collection-card bottom rarity stripe
+
+Source-backed structure from current `ui_econ_item_animated`:
+
+- `#BottomLayer.ItemRarityBackgroundColor` is 3 px high, full width, bottom-aligned, and uses the
+  exact rarity color as a solid base.
+- The base has opacity 0.8, `0px -1px 0px 0px rgba(0, 0, 0, 0.6)` shadow, and a one-pixel
+  `rgba(255, 255, 255, 0.05)` top border.
+- Child `#BottomLayerOverlay` fills the stripe and uses
+  `gradient(linear, 100% 0%, 0% 0%, from(#000000aa), color-stop(0.35, #00000000),
+  color-stop(0.65, #00000000), to(#000000aa))`.
+- The visible center highlight comes from leaving the exact rarity base unobscured between 35%
+  and 65%; do not replace it with a hand-authored brighter center color.
+- Immortal and Arcana run their source one-second, infinite, ease-in-out, alternate-reverse glow
+  animations from brightness 1 to 3 and from transparent 12 px shadow to alpha-`11` 16 px shadow.
+- Runtime screenshots remain required before claiming pixel fidelity.

@@ -1,6 +1,6 @@
 # Coordinate and replica contract
 
-Use for Figma, draw.io, screenshots, or any request for strict visual reproduction.
+Use for Figma, draw.io, screenshots, or any request for strict visual reproduction, including local corrections with a supplied alignment reference.
 
 Before this contract, complete the evidence brief and state matrix in `visual-delivery-loop.md`, then the prototype selection and mapping table in `dota2-page-archetypes.md`. The design artifact controls the regions it draws; a designated complete reference controls missing content/layout; the selected Dota page controls only still-unspecified visual treatment. A screenshot of the target alone does not justify a generic Dota-like restyle.
 
@@ -30,6 +30,21 @@ Do not start implementation until all required rows are `mapped`. After editing,
 - `runtime-verified`: the current runtime screenshot matches the design relation and has no clipping, overlap, or unexplained drift.
 
 If the user owns screenshot feedback, stop at `source-checked`, request the screenshot, and state that runtime verification remains pending. Never report “all design requirements implemented” when the ledger still contains `mapped`, `assumed`, or visually unverified rows.
+
+## Alignment extraction gate
+
+Before coding an alignment-sensitive region, extract:
+
+- outer card and content bounds;
+- fixed-grid versus independently centered-group semantics;
+- label and value column edges/alignment;
+- lock, trend, badge, and empty-state cells;
+- row height and special-row gap;
+- icon+count center relative to its action button.
+
+Convert screenshot measurements into parent-relative axes, cells, gaps, and ratios. Measurements validate the relation; they do not justify switching to a different layout model.
+
+If repeated values share an edge and a lock occupies that column in the design, encode and prove a grid. Per-row centering is not equivalent. If complete row groups are independently centered, fixed asymmetric columns are not equivalent.
 
 ## Geometry policy
 
@@ -94,5 +109,6 @@ Define a policy before implementation:
 - Every visible target-design layer and relation is present; no recognizable resource is replaced by an unapproved synthetic approximation.
 - The final CSS cascade has no later rule that restores a removed background, border, shadow, offset, or placeholder.
 - Final screenshot has no unexplained design drift.
+- Predictive source proof covers every design-owned authored relation and selected counterexample before runtime confirmation.
 
 Do not claim “close enough” when any hard gate fails. Report blocked evidence or an explicitly approved deviation.

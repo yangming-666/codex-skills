@@ -2,7 +2,7 @@
 
 ## 1) Panorama command
 
-Use one-line command in Panorama console:
+Use one line in the current authorized VConsole2 session:
 
 ```js
 gDZSJGameFlow.DumpEndLayoutGeometry()

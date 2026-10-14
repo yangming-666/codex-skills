@@ -1,122 +1,89 @@
 ---
 name: dota2-panorama
-description: Author and maintain Dota 2 Panorama source UI under an addon's content panorama directory using XML, CSS, and JS, and maintain a page-specific Dota 2 UI reference catalog. Use for layouts, styles, client behavior, CustomUIElement wiring, GameEvents, CustomNetTables, localization, WorldPanels, design replication, screenshot-feedback correction, or explicit vanilla UI reference research. For new visual design or replication, select a concrete Dota 2 page with matching function, layout, and hierarchy; for targeted corrections, preserve accepted regions. During addon implementation, never inspect compiled game Panorama artifacts; an explicit global reference-catalog research task may inspect/decompile vanilla .vxml_c/.vcss_c/.vjs_c under the evidence and isolation rules below.
+description: "Author or diagnose Panorama XML/VCSS/JS layout, state, events, lifecycle and rendering. Ordinary Panel/Image alignment, partial overflow or clipping uses layout proof; only a named or source-proven ScenePanel output defect uses compositor research. Excludes backend/Lua/KV/VMAP-only work and localization-only or value-lookup edits without a Panorama contract change."
 ---
 
 # Dota 2 Panorama
 
-Create and edit Panorama source while preserving runtime wiring and verified geometry.
+Use addon source and one narrowly selected route. This Skill owns Panorama layout/state/lifecycle/
+rendering contracts, not a neighboring Lua/KV/backend fact or unchanged ScenePanel merely present
+on a page. Follow host source, validation, path-resolution and runtime authorization rules.
 
-## Hard gates
+## Select the owning route
 
-- Locate the matching file under `content/<addon>/panorama/...` before reading or editing UI.
-- During addon UI implementation, never read, inspect, or decompile `game/<addon>/panorama/...` or any `_c` artifact. If matching addon source is absent, stop and report the expected source path.
-- Exception: when the task explicitly builds or maintains the global Dota 2 UI reference-case catalog, vanilla `.vxml_c`, `.vcss_c`, and `.vjs_c` may be extracted and decompiled for research. Keep outputs outside every addon's source tree, label them as decompiled evidence, and do not copy them into an addon without a separate implementation task and source-level review.
-- For a page design or redesign, select one primary Dota page archetype before editing. “Dota style”, a palette, or a mood board is not a prototype.
-- For a targeted screenshot correction, freeze accepted regions and repair only the reported contract. Do not reopen the whole page design or replace its prototype unless the user explicitly requests a redesign.
-- For a page-level screenshot, Figma, draw.io, or other design-artifact implementation, build a design-coverage ledger before editing. Account for every visible content region, relation, background/decor layer, exact asset, state, and data owner. A local screenshot correction uses the smaller delta contract instead.
-- Apply evidence precedence explicitly: the target design owns every region it draws; a designated complete-content reference owns content/layout missing from the target design; the selected Dota prototype owns only visual treatment still unspecified by both. Never let an existing implementation override higher-priority evidence.
-- Scale visual process to task size using `references/visual-delivery-loop.md`: use a delta contract for a local correction, a compact evidence/state contract for a component replica, and a full ledger/matrix for a page design. A partial design, complete-content reference, and Dota visual prototype are different owners; never merge their roles implicitly.
-- Treat visible backgrounds, separators, masks, overlays, and image-under-text compositions as required structure, not optional polish. Verify exact resource identity for recognizable Dota art instead of substituting a synthetic block.
-- Use relationship-first layout. Centering, distribution, and remaining-space placement must be owned by parent structure; do not simulate them with independent pixel offsets.
-- Audit the final CSS cascade before every screenshot handoff. Do not accumulate append-only “final override” sections for the same component.
-- Do not call a result an original-page replica unless the claimed hierarchy and visual rules are traceable to uncompiled source or directly observed runtime evidence.
-- Respect the repository's validation policy. In projects that prohibit automatic Panorama syntax checks, do not run them unless the user explicitly requests them.
-- Do not invent web CSS/API features. Verify fragile syntax against a working local source example.
+| Task | Required reading |
+| :--- | :--- |
+| Ordinary Panel/Image geometry, alignment, clipping/overflow or screenshot correction | [layout-proof.md](references/layout-proof.md): common source/geometry/reject sections plus only applicable centering, clipping or intrinsic-image subsections |
+| Named/source-proven ScenePanel or ParticleScenePanel output/framing/composition/lifecycle defect | [scenepanel-compositor.md](references/scenepanel-compositor.md); select one render layer before edits |
+| JS state, navigation, events or rerender | [visual-delivery-loop.md](references/visual-delivery-loop.md), applicable states only; [panorama-api2.md](references/panorama-api2.md) only for unresolved API behavior |
+| Strict screenshot/design alignment | [design-alignment-proof.md](references/design-alignment-proof.md); [coordinate-and-replica.md](references/coordinate-and-replica.md) only for coordinate mapping |
+| Visual hierarchy/surfaces or page replication | [visual-hierarchy-and-chrome.md](references/visual-hierarchy-and-chrome.md) and applicable delivery-loop sections |
+| New page/redesign | Also the matching archetype in [dota2-page-archetypes.md](references/dota2-page-archetypes.md) |
+| Named vanilla page/component or explicit reference catalog | [dota2-decompiled-page-cases.md](references/dota2-decompiled-page-cases.md), only matching research route |
+| Entity-anchored WorldPanel | [worldpanel.md](references/worldpanel.md) |
+| Returned regression, accepted subtree at risk or runtime contradiction | [regression-baseline.md](references/regression-baseline.md) |
+| Authorized validation/engine-only fact | [validation.md](references/validation.md), only applicable commands and evidence lane |
 
-## Workflow
+Do not load every reference, API catalog or page archetype. Local geometry does not automatically
+require compositor/design/vanilla research. Conditional references remain mandatory when their
+owner is affected; keep their full applicable contract, not a keyword-only excerpt.
 
-1. Identify the UI load scope and existing source layout, style, script, manifest, localization, events, and net-table contracts.
-2. Read the applicable reference:
-   - ordinary layout or refactor: `references/layout-contracts.md`;
-   - any visual design, screenshot, or reference-driven task: `references/visual-delivery-loop.md`;
-   - Figma/draw.io/image replica: `references/coordinate-and-replica.md`;
-   - any visual design or redesign: `references/dota2-page-archetypes.md`;
-   - vanilla core-page prototype or catalog research: `references/dota2-decompiled-page-cases.md`;
-   - entity-anchored panel: `references/worldpanel.md`;
-   - validation requested or required by repo: `references/validation.md`.
-3. Classify visual scope as local correction, component replica, or page design. Create only the contract required for that scope.
-4. For a local correction, preserve accepted regions, identify the owning selector/function, and define the regression boundary. Reuse any existing prototype; do not select a new page prototype solely for the correction.
-5. For a component replica, declare evidence roles and relevant component states, then select one component reference.
-6. For a page design or redesign, classify shell, task, hierarchy, density, and dynamic behavior; select one primary prototype and at most two secondary component references.
-7. For page-level design-artifact work, read `references/coordinate-and-replica.md`, complete its coverage ledger, and record `target region -> prototype region -> evidence -> retained rule -> adaptation`.
-8. Preflight the loaded XML subtree, relevant CSS cascade, JS state owners, shared style includes, exact assets, localization tokens, and runtime data.
-9. For Figma tasks, invoke the official `figma:figma-design-to-code` workflow before obtaining design context. Treat Figma as the target content/layout contract and the selected Dota page as the visual implementation contract.
-10. Build the panel tree and relationship contract before local dimensions, spacing, and typography.
-11. Keep XML declarative, CSS responsible for layout/visuals, and JS responsible for state/events/rendering.
-12. Wire `custom_ui_manifest.xml` or the relevant include only when required.
-13. Preserve runtime data and localization sources. Visible design text is not automatically an XML literal, and a plausible token name is not evidence that the token exists.
-14. When structure is stable, update the smallest stable subtree for local interactions. For structural data changes, allow controlled rerendering while preserving stable shell, focus, scroll, and unrelated state.
-15. Reconcile the applicable delta, component contract, or page ledger; inspect the final CSS cascade and resource paths; distinguish `source-checked` from `runtime-verified`.
-16. Use one early structural smoke check when runtime behavior is uncertain, then batch source-complete visual changes before the final screenshot set.
-17. Validate only according to project policy and the requested scope.
+## Source and visual invariants
 
-## Source conventions
+- Addon implementation reads/edits only `content/<addon>/panorama/`. Missing corresponding source
+  blocks implementation; report its expected path. No compiled addon or `game/` Panorama reads.
+  Only explicit global vanilla reference-catalog work may inspect compiled vanilla evidence, outside
+  addon source, through the reference-catalog route.
+- Preserve IDs, events, bindings, localization, hit testing and accepted stable subtrees except where
+  the request changes them. XML owns structure, VCSS layout/visuals and JS state/events/rendering.
+- Every affected 2D image keeps intrinsic aspect ratio, uniformly contained and centered in its
+  stable box by default. Crop/cover/stretch/tile/nine-slice need an explicit user exception. Prove
+  resource dimensions, actual drawing panel/API, complete cascade and all changed-resource/rerender
+  states through layout-proof. Source/resource proof is required; screenshots are no substitute.
+- Use only source/doc-proven Panorama properties and value syntax. Uncertain support requires
+  authoritative confirmation before writing. Shadow ownership: Image `img-shadow`, text
+  `text-shadow`, box `box-shadow`; no browser `drop-shadow` or `filter` analogy.
+- Centering names the requested visual box, layout container, text panel and actual visible group.
+  A centered wrapper or `text-align` alone proves nothing. Ordinary clipping fixes freeze the child's
+  accepted geometry first; identify the owning ancestor/stacking/parent relationship before moving
+  offsets, growing a host or substituting images.
 
-- Use `.xml`, `.css`, and `.js` under `content/<addon>/panorama/`.
-- Use `file://{images}/...` for addon images and `file://{resources}/...` for addon layout/style/script includes. Use `s2r://...` for compiled game resources.
-- Convert KV `.vtex_c`/`.vsvg_c` paths to Panorama resource forms without the compiled suffix.
-- Use localization tokens for player-facing copy.
-- Verify a localization token exists before using or constructing it. Prefer an existing config/runtime field when no valid token exists.
-- Use `GameEvents` for server messages and `CustomNetTables` for synchronized state.
-- Avoid globals; expose shared helpers through `GameUI` only when genuinely shared.
-- Use `$.GetContextPanel()` when the layout root is needed; the first actual panel under `<root>` must not have an `id`.
-- Resolve external Dota roots through the host project's path resolver. Never encode a Steam library or user path in skill output.
+## Work and regression control
 
-## Dota visual evidence
+1. Locate loaded XML/VCSS/JS/includes, dynamic constructors and rerender owners. Extend one task
+   record with requirement, invariants, allowed owner and source/engine evidence needed; no second
+   regression/matrix/report merely because another reference is loaded.
+2. Inspect complete affected parent chains, cascade, authored geometry, clipping/z-order, hit tests,
+   lifetime and repeated states. Trace source uncertainty first. For ScenePanel, name one render-layer
+   owner and held-invariant layers; controlled substitution may resolve remaining resource ownership.
+3. Capture/reuse the exact baseline for previously accepted behavior or a risky subtree change.
+   `SetParent`, child reordering, Carousel recycling, duplicate ScenePanels, ancestor blur/masks/
+   transforms/clipping and oversized hosts require a recorded risk and baseline comparison.
+   Keep one live ScenePanel per semantic object unless explicit verified requirements need more.
+   Preserve accepted inner framing inside a stable crop wrapper.
+4. Make the smallest owning change, consolidate temporary selectors and recheck affected
+   relationships. Do not compensate with unrelated resources, VMAP/camera or styling changes.
+   Run checks only as authorized; source-review obligations do not authorize a gate or new test.
+5. If an authorized runtime result contradicts source, invalidate the claim and revert this task's
+   disproved change before another hypothesis. Restore frozen child geometry for clipping attempts.
+   After two failures of the same relation, restore the recoverable verified baseline and stop
+   speculative patches. If none is recoverable, report the baseline gap; never erase unrelated work.
 
-- **A — source-backed:** uncompiled Valve XML/CSS/JS is available. Reuse its panel hierarchy, selectors, state model, dimensions, gradients, borders, and motion as applicable.
-- **D — decompiled-reference-backed:** vanilla VPK artifacts were decompiled during an explicit reference-catalog task. Use them to document page hierarchy, selectors, properties, and state wiring, but label provenance and cross-check important visuals in the running client.
-- **B — runtime-backed:** the page can be observed or captured and exact resource identity is known, but uncompiled source is absent. Reproduce only visible behavior and geometry; do not claim hidden implementation details.
-- **C — inferred:** only an image or stylistic resemblance exists. Label the result as an adaptation, not an original-page replica.
-- Outside an explicit reference-catalog task, use VPK listings only to identify and classify candidate pages.
-- During an explicit reference-catalog task, inventory first, extract only the selected page family and its direct style/script dependencies, and record VPK path plus resource identity. Do not bulk-decompile unrelated Panorama resources.
-- Check the VPK for raw `.xml`, `.css`, and `.js` before declaring source absent. If only `vxml_c`, `vcss_c`, or `vjs_c` exists, keep the page at identity-only evidence until runtime captures are obtained.
-- If the primary prototype is D, B, or C, state the evidence limitation. D evidence still requires runtime visual comparison before claiming pixel fidelity.
+Do not revisit an excluded resource plane without new contradictory evidence. Do not sacrifice an
+accepted ScenePanel subtree to keep a new animation; build around the stable owner.
 
-## Design-to-Panorama contract
+## Acceptance scope
 
-- Separate target content ownership from visual implementation ownership: the product/design document determines content and interaction; the selected Dota prototype determines shell, hierarchy, surfaces, control treatment, and state presentation.
-- Preserve the primary prototype's information hierarchy. Do not mix unrelated page shells merely because individual colors or ornaments look useful.
-- Secondary references may supply isolated controls only, such as a close button, tab strip, rarity row, or notification transition.
-- Split composed views into background/decor, content, overlay, mask/clip, and interaction layers.
-- Preserve visual hierarchy in the panel tree.
-- Build frame/card elements as an outer shell plus dedicated decor and content children.
-- Give avatars and cropped art a dedicated clip window.
-- Use runtime bindings for account values, currency, status, and other live data.
-- Use existing localization tokens for labels; do not paste Figma text into XML without deciding ownership.
-- For independently positioned decorative groups, use fixed/absolute outer placement and flow only inside the group.
-- Do not approximate a multi-region design by placing all children in one flow container and nudging margins.
-- Use fixed coordinates only for authored outer bounds or independently positioned decorative layers. Implement center, baseline, equal-spacing, and remaining-space relationships through parent layout.
+Source can prove parentage, boxes, cascade, events, paths and the complete ordinary 2D contain
+contract. Runtime proves engine-only compiled transparency, composition, animation/recycling and
+actual black/blank output. Keep `source-inspected`, `source-proved` and `runtime-verified` distinct;
+claim only the requested relationship supported by its evidence, not final rendered behavior from
+source alone. Diff hygiene, compilation, selector presence or equal wrappers are insufficient.
 
-## Runtime behavior
+Use a small early authorized engine check when such an uncertainty actually remains; do not accumulate
+speculative edits first. For Dota/Panorama console evidence use only the current authorized VConsole2
+session; runner/probe output is separate run evidence, not archived-console substitution.
 
-- Keep one owner for each scroll axis.
-- Prefer class toggles for finite image/state sets; reserve dynamic `backgroundImage` for truly open-ended paths.
-- Use a fixed media wrapper plus verified aspect-preserving background rules for images at stretch risk.
-- Separate stable wrapper geometry from label text rendering.
-- When state/visibility previously lives on a label that becomes wrapped, move or mirror the behavior to the wrapper.
-- Keep one render owner per state. Local toggles update classes, text, and assets in place so unrelated rows do not flash or lose focus.
-
-## References
-
-- `references/layout-contracts.md`: rounded shells, stable layers, layout templates, images, text, and scrolling.
-- `references/visual-delivery-loop.md`: evidence roles, state matrix, relationship-first implementation, cascade audit, and screenshot-feedback convergence.
-- `references/coordinate-and-replica.md`: coordinate systems, Figma/DZSJ mappings, strict replica pipeline, and acceptance criteria.
-- `references/dota2-page-archetypes.md`: mandatory prototype-selection method and source-backed catalog of concrete Dota page implementations.
-- `references/dota2-decompiled-page-cases.md`: page-specific D-evidence catalog for vanilla item details, progression, selection, probability, and report screens.
-- `references/worldpanel.md`: fixed anchor geometry and flow-safe entity alignment.
-- `references/validation.md`: optional syntax, static layout, runtime dump, and replica commands.
-- `references/panorama-framework.md`: project framework notes.
-- `references/panorama-api2.md`: API reference.
-- `references/replica-alignment-rules.md`: compact alignment rules.
-
-## Assets
-
-- `assets/panorama-panel-template/`: base panel.
-- `assets/worldpanel-anchor-template/`: entity anchor.
-- `assets/replica-shell-template/`: fixed replica shell.
-
-## Scripts
-
-- `scripts/inventory-vpk-panorama.ps1`: read-only VPK source/candidate inventory. Run it before any narrowly scoped reference extraction.
+`scripts/audit_scenepanel_contract.py` records structure/drift when that check is needed and permitted;
+it is not a renderer. `check_panorama_layout.py` is for an existing mapping-backed fixed contract,
+not a reason to create mappings for a local fix. `check_runtime_layout.py` needs real runtime rectangles.
