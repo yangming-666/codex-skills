@@ -15,7 +15,6 @@
 | [dota2-sound-lookup](skills/dota2-sound-lookup/SKILL.md) | 声音事件、依赖和播放契约核对 |
 | [drawio](skills/drawio/SKILL.md) | draw.io XML 图表创建与维护 |
 | [pve-replica-excel](skills/pve-replica-excel/SKILL.md) | 既有 PVE 英雄技能工作簿的证据驱动更新 |
-| [screenshot](skills/screenshot/SKILL.md) | 桌面截图采集工作流 |
 
 ## 使用方式
 
